@@ -18,8 +18,7 @@ class NodeTest(unittest.TestCase):
         self.assertEqual(node.tags, ["a", "b"])
         self.assertEqual(node.status, None)
         self.assertEqual(
-            node.__str__(),
-            "* hoge                                                                  :a:b:",
+            node.__str__(), "* hoge" + " " * 66 + ":a:b:",
         )
 
         with self.assertRaises(StopIteration):

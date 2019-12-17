@@ -4,14 +4,16 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-black = "*"
 flake8 = "*"
 mypy = "*"
 pytest = "*"
 
 [packages]
-lock = "*"
-todoist2org = {editable = true,path = "."}
+black = "*"
+orgorganizer = {editable = true,path = "."}
 
 [requires]
 python_version = "3.8"
+
+[pipenv]
+allow_prereleases = true

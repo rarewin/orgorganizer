@@ -107,7 +107,7 @@ class OrgHeadlineNode:
     def parse(self, force=False):
         """パースを実行する. 実施済みの場合は何もしない"""
 
-        if self._parsed == True or force == True:
+        if self._parsed or force:
             return
 
         self._parsed = True
