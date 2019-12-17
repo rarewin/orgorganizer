@@ -1,5 +1,4 @@
 import unittest
-import pytest
 
 from orgorganizer.node import parse_lines
 
@@ -7,48 +6,61 @@ from orgorganizer.node import parse_lines
 class NodeTest(unittest.TestCase):
     """OrgのNodeクラスのテスト"""
 
-    def test_headline_0level(self):
-        root = parse_lines("* hoge")
-        it = root.__iter__()
+    def test_headline_1level(self):
+        document = parse_lines("* hoge  :a:b:")
+        it = document.__iter__()
 
         node = next(it)
-        self.assertEqual(node.level, 0)
-        self.assertEqual(node._content, "hoge")
-        self.assertEqual(node.__str__(), "* hoge")
+        self.assertEqual(node.level, 1)
+        self.assertEqual(node._parsed, False)
+        self.assertEqual(node.title, "hoge")
+        self.assertEqual(node._parsed, True)
+        self.assertEqual(node.tags, ["a", "b"])
+        self.assertEqual(node.status, None)
+        self.assertEqual(
+            node.__str__(),
+            "* hoge                                                                  :a:b:",
+        )
 
         with self.assertRaises(StopIteration):
             next(it)
 
-    def test_headline_1level(self):
+    def test_headline_2level(self):
 
-        root = parse_lines("** fuga")
-        it = root.__iter__()
+        document = parse_lines("** fuga")
+        it = document.__iter__()
 
         node = next(it)
-        self.assertEqual(node.level, 1)
-        self.assertEqual(node._content, "fuga")
+        self.assertEqual(node.level, 2)
+        self.assertEqual(node.title, "fuga")
+        self.assertEqual(node._parsed, True)
         self.assertEqual(node.__str__(), "** fuga")
 
         with self.assertRaises(StopIteration):
             next(it)
 
     def test_headline_levels(self):
+        """複数レベルのHEADLINEのテスト"""
 
-        root = parse_lines(
+        document = parse_lines(
             """* hoge
 ** fuga"""
         )
-        it = root.__iter__()
+        it = document.__iter__()
 
-        node = next(it)
-        self.assertEqual(node.level, 0)
-        self.assertEqual(node._content, "hoge")
-        self.assertEqual(node.__str__(), "* hoge")
+        node1 = next(it)
+        self.assertEqual(node1.level, 1)
+        self.assertEqual(node1.title, "hoge")
+        self.assertEqual(node1._parsed, True)
+        self.assertEqual(node1.__str__(), "* hoge")
 
-        node = next(it)
-        self.assertEqual(node.level, 1)
-        self.assertEqual(node._content, "fuga")
-        self.assertEqual(node.__str__(), "** fuga")
+        node2 = next(it)
+        self.assertEqual(node2.level, 2)
+        self.assertEqual(node2.title, "fuga")
+        self.assertEqual(node2.__str__(), "** fuga")
+        self.assertEqual(node2._parsed, True)
+
+        self.assertEqual(node2.parent, node1)
 
         with self.assertRaises(StopIteration):
             next(it)
