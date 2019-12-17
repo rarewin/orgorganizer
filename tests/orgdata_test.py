@@ -44,7 +44,11 @@ class NodeTest(unittest.TestCase):
 
         document = parse_lines(
             """* hoge
-** fuga"""
+** fuga
+** moge
+*** mogemoge
+*** mogemoge
+"""
         )
         it = document.__iter__()
 
@@ -60,7 +64,31 @@ class NodeTest(unittest.TestCase):
         self.assertEqual(node2.__str__(), "** fuga")
         self.assertEqual(node2._parsed, True)
 
+        node3 = next(it)
+        self.assertEqual(node3.level, 2)
+        self.assertEqual(node3.title, "moge")
+        self.assertEqual(node3.__str__(), "** moge")
+        self.assertEqual(node3._parsed, True)
+
         self.assertEqual(node2.parent, node1)
+        self.assertEqual(node3.parent, node1)
+
+        node4 = next(it)
+        self.assertEqual(node4.level, 3)
+        self.assertEqual(node4.title, "mogemoge")
+        self.assertEqual(node4.__str__(), "*** mogemoge")
+        self.assertEqual(node4._parsed, True)
+
+        self.assertEqual(node4.parent, node3)
+
+        node5 = next(it)
+        self.assertEqual(node5.level, 3)
+        self.assertEqual(node5.title, "mogemoge")
+        self.assertEqual(node5.__str__(), "*** mogemoge")
+        self.assertEqual(node5._parsed, True)
+
+        self.assertEqual(node5.parent, node3)
+        self.assertNotEqual(node4, node5)
 
         with self.assertRaises(StopIteration):
             next(it)

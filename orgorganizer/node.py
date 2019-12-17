@@ -137,7 +137,7 @@ def find_parent(nodes, child):
     # 親の階層は, 子の1個上か現在のnodesの長さ - 1
     parent_level = min(child.level - 1, len(nodes) - 1)
 
-    while len(nodes) < parent_level:
+    while len(nodes) > parent_level + 1:
         nodes.pop()
 
     while 0 < parent_level:
