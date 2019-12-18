@@ -1,6 +1,6 @@
 """A setuptools based setup module."""
 
-import setuptools.find_packages
+from distutils.core import setup
 
 setup(
     name="orgorganizer",
