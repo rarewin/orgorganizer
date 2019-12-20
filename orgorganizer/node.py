@@ -4,17 +4,19 @@ import re
 ORG_WIDTH = 77  # @todo investigation
 
 RE_HEADLINE = re.compile(r"^(\*+)\s+(.*)")
-RE_HEADLINE_TAGS = re.compile(r":([\w\s:]+):$")
+RE_HEADLINE_TAGS = re.compile(r"\s+:([\w\s:]+):$")
+RE_HEADLINE_PRIORITY = re.compile(r"\[#(\w)\]\s+(.*)$")
 
 
 class OrgDocument:
     """org文章ルート"""
 
-    __slots__ = ("_nodes", "_content", "_level")
+    __slots__ = ("_nodes", "_content", "_level", "_keywords")
 
     def __init__(self):
         self._nodes = []
         self._content = ""
+        self._keywords = ["TODO", "DONE"]
 
     def __iter__(self):
 
@@ -28,6 +30,10 @@ class OrgDocument:
     def level(self):
         return self._level
 
+    @property
+    def keywords(self):
+        return self._keywords
+
 
 class OrgHeadlineNode:
     """
@@ -39,8 +45,9 @@ class OrgHeadlineNode:
     __slots__ = (
         "_level",
         "_children",
+        "_keyword",
+        "_priority",
         "_title",
-        "_status",
         "_tags",
         "_parsed",
         "_content",
@@ -48,12 +55,14 @@ class OrgHeadlineNode:
     )
 
     def __init__(self, level, line):
-        self._children = []
         self._parsed = False
-        self._tags = []
-        self._status = None
-        self._title = ""
+        self._children = []
         self._parent = None
+
+        self._keyword = ""
+        self._priority = ""
+        self._title = ""
+        self._tags = []
 
         self._level = level
         self._content = line
@@ -63,8 +72,13 @@ class OrgHeadlineNode:
         if not self._parsed:
             self.parse()
 
-        ret = "{} {}".format("*" * self._level, self._title)
+        ret = "{} {}{}".format(
+            "*" * self._level,
+            "[#{}] ".format(self.priority) if self.priority else "",
+            self._title,
+        )
 
+        # TAGまでのスペース調整
         if self._tags:
             tag_str = ":{}:".format(":".join(self._tags))
             ret += " " * (ORG_WIDTH - len(ret) - len(tag_str)) + tag_str
@@ -87,14 +101,14 @@ class OrgHeadlineNode:
         return self._tags
 
     @property
-    def status(self):
-        self.parse()
-        return self._status
-
-    @property
     def title(self):
         self.parse()
         return self._title
+
+    @property
+    def priority(self):
+        self.parse()
+        return self._priority
 
     @property
     def parent(self):
@@ -118,7 +132,14 @@ class OrgHeadlineNode:
             self._content = self._content[: -len(m.group(0))].strip()
             self._tags = m.group(1).split(":")
 
-        self._title = self._content
+        m = RE_HEADLINE_PRIORITY.search(self._content)
+
+        if m:
+            self._title = m.group(2)
+            self._content = self._content[: -len(m.group(0))].strip()
+            self._priority = m.group(1)
+        else:
+            self._title = self._content
 
     def set_parent(self, parent):
         self._parent = parent
@@ -133,6 +154,7 @@ class OrgProperty:
 
 
 def find_parent(nodes, child):
+    """nodes中のchildの親を探し, nodesを更新する"""
 
     # 親の階層は, 子の1個上か現在のnodesの長さ - 1
     parent_level = min(child.level - 1, len(nodes) - 1)

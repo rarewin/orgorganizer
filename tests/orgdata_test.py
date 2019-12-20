@@ -7,7 +7,9 @@ class NodeTest(unittest.TestCase):
     """OrgのNodeクラスのテスト"""
 
     def test_headline_1level(self):
-        document = parse_lines("* hoge  :a:b:")
+        """レベル1のHEADLINEテスト"""
+
+        document = parse_lines("* [#A] hoge  :a:b:")
         it = document.__iter__()
 
         node = next(it)
@@ -16,15 +18,16 @@ class NodeTest(unittest.TestCase):
         self.assertEqual(node.title, "hoge")
         self.assertEqual(node._parsed, True)
         self.assertEqual(node.tags, ["a", "b"])
-        self.assertEqual(node.status, None)
+        self.assertEqual(node.priority, "A")
         self.assertEqual(
-            node.__str__(), "* hoge" + " " * 66 + ":a:b:",
+            node.__str__(), "* [#A] hoge" + " " * 61 + ":a:b:",
         )
 
         with self.assertRaises(StopIteration):
             next(it)
 
     def test_headline_2level(self):
+        """レベル2のHEADLINEテスト"""
 
         document = parse_lines("** fuga")
         it = document.__iter__()
@@ -71,6 +74,8 @@ class NodeTest(unittest.TestCase):
 
         self.assertEqual(node2.parent, node1)
         self.assertEqual(node3.parent, node1)
+        self.assertIn(node2, node1.children)
+        self.assertIn(node3, node1.children)
 
         node4 = next(it)
         self.assertEqual(node4.level, 3)
@@ -79,6 +84,7 @@ class NodeTest(unittest.TestCase):
         self.assertEqual(node4._parsed, True)
 
         self.assertEqual(node4.parent, node3)
+        self.assertIn(node4, node3.children)
 
         node5 = next(it)
         self.assertEqual(node5.level, 3)
