@@ -4,8 +4,7 @@ import re
 ORG_WIDTH = 77  # @todo investigation
 
 RE_HEADLINE = re.compile(r"^(\*+)\s+(.*)")
-RE_HEADLINE_TAGS = re.compile(r"\s+:([\w\s:]+):$")
-RE_HEADLINE_PRIORITY = re.compile(r"\[#(\w)\]\s+(.*)$")
+RE_HEADLINE_TAGS = re.compile(r"\s+:([\w%#@:]+):$")
 
 
 class OrgDocument:
@@ -22,6 +21,15 @@ class OrgDocument:
 
         for node in self._nodes:
             yield from iter(node)
+
+    def __str__(self):
+
+        lines = []
+
+        for n in self:
+            lines.append(n.__str__())
+
+        return "\n".join(lines)
 
     def append_child(self, node):
         self._nodes.append(node)
@@ -52,9 +60,10 @@ class OrgHeadlineNode:
         "_parsed",
         "_content",
         "_parent",
+        "_root",
     )
 
-    def __init__(self, level, line):
+    def __init__(self, level, line, root):
         self._parsed = False
         self._children = []
         self._parent = None
@@ -67,14 +76,16 @@ class OrgHeadlineNode:
         self._level = level
         self._content = line
 
+        self._root = root
+
     def __str__(self):
 
-        if not self._parsed:
-            self.parse()
+        self.parse()
 
-        ret = "{} {}{}".format(
+        ret = "{} {}{}{}".format(
             "*" * self._level,
-            "[#{}] ".format(self.priority) if self.priority else "",
+            "{} ".format(self._keyword) if self._keyword else "",
+            "[#{}] ".format(self._priority) if self.priority else "",
             self._title,
         )
 
@@ -111,6 +122,11 @@ class OrgHeadlineNode:
         return self._priority
 
     @property
+    def keyword(self):
+        self.parse()
+        return self._keyword
+
+    @property
     def parent(self):
         return self._parent
 
@@ -126,20 +142,32 @@ class OrgHeadlineNode:
 
         self._parsed = True
 
+        # KEYWORDをみつける
+        t = self._content.strip().split(" ", maxsplit=1)
+
+        if len(t) == 2 and t[0] in self._root.keywords:
+            self._keyword = t[0]
+            self._content = t[1].strip()
+
+        t = self._content.split(" ", maxsplit=1)
+
+        if (
+            len(t) == 2
+            and t[0].startswith("[#")
+            and t[0].find("]") == 3
+            and len(t[0]) == 4
+        ):
+            self._priority = t[0][2]
+            self._content = t[1].strip()
+
         m = RE_HEADLINE_TAGS.search(self._content)
 
         if m:
             self._content = self._content[: -len(m.group(0))].strip()
             self._tags = m.group(1).split(":")
 
-        m = RE_HEADLINE_PRIORITY.search(self._content)
-
-        if m:
-            self._title = m.group(2)
-            self._content = self._content[: -len(m.group(0))].strip()
-            self._priority = m.group(1)
-        else:
-            self._title = self._content
+        self._title = self._content
+        self._content = None
 
     def set_parent(self, parent):
         self._parent = parent
@@ -190,7 +218,7 @@ def parse_lines(data):
         if m:
             level = len(m.group(1))
             content = m.group(2)
-            node = OrgHeadlineNode(level, content)
+            node = OrgHeadlineNode(level, content, root)
             parent = find_parent(nodes, node)
             node.set_parent(parent)
             parent.append_child(node)
