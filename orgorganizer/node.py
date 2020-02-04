@@ -82,16 +82,15 @@ class OrgHeadlineNode:
 
         self.parse()
 
-        ret = "{} {}{}{}".format(
-            "*" * self._level,
-            "{} ".format(self._keyword) if self._keyword else "",
-            "[#{}] ".format(self._priority) if self.priority else "",
-            self._title,
-        )
+        stars = "*" * self._level
+        keyword = f"{self._keyword} " if self._keyword else ""
+        priority = f"[#{self._priority}] " if self.priority else ""
+        ret = f"{stars} {keyword}{priority}{self._title}"
 
         # TAGまでのスペース調整
         if self._tags:
-            tag_str = ":{}:".format(":".join(self._tags))
+            tags = ":".join(self._tags)
+            tag_str = f":{tags}:"
             ret += " " * (ORG_WIDTH - len(ret) - len(tag_str)) + tag_str
 
         return ret
